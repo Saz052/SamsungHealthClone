@@ -3,6 +3,7 @@ package com.stride.tracker;
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -23,6 +24,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 
@@ -203,20 +205,37 @@ public final class MainActivity extends Activity {
     }
 
     private void showTestSettings() {
+        Calendar selectedDay = StepStore.today();
         EditText input = new EditText(this);
         input.setInputType(InputType.TYPE_CLASS_NUMBER);
         input.setSingleLine(true);
         input.setHint("Количество шагов");
-        input.setText(String.valueOf(StepStore.todaySteps(this)));
+        input.setText(String.valueOf(StepStore.getSteps(this, selectedDay)));
         input.setSelection(input.length());
+
         int padding = dp(20);
         LinearLayout container = column();
         container.setPadding(padding, dp(8), padding, 0);
+        TextView dateButton = text("Дата: " + formatDate(selectedDay), 16, GREEN, true);
+        dateButton.setPadding(0, dp(8), 0, dp(12));
+        dateButton.setOnClickListener(view -> {
+            DatePickerDialog picker = new DatePickerDialog(this, (datePicker, year, month, dayOfMonth) -> {
+                selectedDay.set(year, month, dayOfMonth, 0, 0, 0);
+                selectedDay.set(Calendar.MILLISECOND, 0);
+                dateButton.setText("Дата: " + formatDate(selectedDay));
+                input.setText(String.valueOf(StepStore.getSteps(this, selectedDay)));
+                input.setSelection(input.length());
+            }, selectedDay.get(Calendar.YEAR), selectedDay.get(Calendar.MONTH),
+                    selectedDay.get(Calendar.DAY_OF_MONTH));
+            picker.getDatePicker().setMaxDate(System.currentTimeMillis());
+            picker.show();
+        });
+        container.addView(dateButton);
         container.addView(input);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Тестовые показатели")
-                .setMessage("Изменение сохраняется только в этом приложении.")
+                .setTitle("Изменить шаги за дату")
+                .setMessage("Выберите день и укажите общее количество шагов. Изменения хранятся только в приложении.")
                 .setView(container)
                 .setNegativeButton("Отмена", null)
                 .setPositiveButton("Сохранить", (d, which) -> {
@@ -226,11 +245,15 @@ public final class MainActivity extends Activity {
                     } catch (NumberFormatException ignored) {
                         steps = 0;
                     }
-                    StepStore.setSteps(this, StepStore.today(), Math.max(0, Math.min(200_000, steps)));
+                    StepStore.setSteps(this, selectedDay, Math.max(0, Math.min(200_000, steps)));
                     refresh();
                 })
                 .create();
         dialog.show();
+    }
+
+    private String formatDate(Calendar day) {
+        return new SimpleDateFormat("d MMM yyyy", Locale.getDefault()).format(day.getTime());
     }
 
     private TextView text(String value, int size, int color, boolean bold) {
