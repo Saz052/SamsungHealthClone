@@ -5,7 +5,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
 
 jobs:
   build:
@@ -27,15 +27,12 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          api-level: 34
-          ndk-version: r26d
-          build-tools-version: 34.0.0
           cmdline-tools-version: latest
-          platforms: android-34
-
-      - name: Accept Android SDK Licenses
-        run: |
-          yes | sdkmanager --licenses > /dev/null
+          accept-android-sdk-licenses: true
+          packages: |
+            platforms;android-34
+            build-tools;34.0.0
+            ndk;26.3.11579264
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
