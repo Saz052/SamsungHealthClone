@@ -58,7 +58,7 @@ public final class StepCounterService extends Service implements SensorEventList
     public void onSensorChanged(SensorEvent event) {
         if (event == null || event.sensor.getType() != Sensor.TYPE_STEP_DETECTOR) return;
         int steps = event.values.length == 0 ? 1 : Math.max(1, Math.round(event.values[0]));
-        StepStore.addSteps(this, steps);
+        StepStore.recordSensorSteps(this, steps);
 
         long now = System.currentTimeMillis();
         if (now - lastNotificationUpdate >= 2500L) {
