@@ -1,16 +1,9 @@
 package com.samsunghealthclone.data
 
-import android.app.Application
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.asLiveData
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import java.util.Calendar
-import java.util.concurrent.Executors
 
 class StepRepository(private val dao: StepDao) {
-
-    private val ioExecutor = Executors.newSingleThreadExecutor()
 
     fun getTodayEntry(): Flow<StepEntry?> {
         val today = StepEntry.getDayStart()
@@ -142,9 +135,5 @@ class StepRepository(private val dao: StepDao) {
         val startDate = calendar.timeInMillis
         val endDate = System.currentTimeMillis()
         return dao.getAverageStepsInRange(startDate, endDate) ?: 0.0
-    }
-
-    fun getAllEntriesLiveData(): LiveData<List<StepEntry>> {
-        return dao.getRecentEntries(30).asLiveData()
     }
 }

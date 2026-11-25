@@ -4,11 +4,12 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.samsunghealthclone.data.HealthDatabase
+import com.samsunghealthclone.HealthApplication
 import com.samsunghealthclone.data.StepEntry
 import com.samsunghealthclone.data.StepRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.util.Calendar
 

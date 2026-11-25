@@ -4,12 +4,12 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.asLiveData
-import com.samsunghealthclone.data.HealthDatabase
+import com.samsunghealthclone.HealthApplication
 import com.samsunghealthclone.data.StepEntry
 import com.samsunghealthclone.data.StepRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import java.util.Calendar
 
@@ -50,12 +50,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun observeTodayEntry() {
-        repository.getTodayEntry()
-            .map { entry ->
-                entry?.let { _todayEntry.postValue(it) }
+        scope.launch {
+            repository.getTodayEntry().collect { entry ->
+                _todayEntry.postValue(entry)
             }
-            .asLiveData()
-            .observeForever { }
+        }
     }
 
     fun loadTodayData() {
@@ -113,10 +112,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             loadWeeklyData()
             loadMonthlyData()
         }
-    }
-
-    fun getEntryForDate(date: Long): StepEntry? {
-        return repository.getEntryForDateSync(date)
     }
 
     fun formatDate(timestamp: Long): String {

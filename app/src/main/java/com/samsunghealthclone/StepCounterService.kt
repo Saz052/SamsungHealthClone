@@ -20,6 +20,7 @@ import com.samsunghealthclone.data.HealthDatabase
 import com.samsunghealthclone.data.StepRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 class StepCounterService : Service(), SensorEventListener {
@@ -28,7 +29,6 @@ class StepCounterService : Service(), SensorEventListener {
     private var stepSensor: Sensor? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var stepCount = 0
-    private var lastSavedSteps = 0
     private val repositoryScope = CoroutineScope(Dispatchers.IO)
 
     override fun onCreate() {
@@ -41,7 +41,7 @@ class StepCounterService : Service(), SensorEventListener {
 
     private fun initializeSensors() {
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        stepSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
+        stepSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_DETECTOR)
         if (stepSensor != null) {
             sensorManager?.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL)
         }
@@ -87,7 +87,7 @@ class StepCounterService : Service(), SensorEventListener {
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .build()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH)
         } else {
             startForeground(1, notification)
@@ -108,33 +108,15 @@ class StepCounterService : Service(), SensorEventListener {
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
-        if (event?.sensor?.type == Sensor.TYPE_STEP_COUNTER) {
-            val currentSteps = event.values[0].toInt()
-            if (currentSteps > stepCount) {
-                stepCount = currentSteps
-                saveStepsIfNeeded()
-                updateNotification()
-            }
-        }
-    }
-
-    private fun saveStepsIfNeeded() {
-        if (stepCount - lastSavedSteps >= 10) { // Save every 10 steps
-            lastSavedSteps = stepCount
+        if (event?.sensor?.type == Sensor.TYPE_STEP_DETECTOR) {
+            val detectedSteps = event.values.firstOrNull()?.toInt()?.coerceAtLeast(1) ?: 1
+            stepCount += detectedSteps
             repositoryScope.launch {
                 val app = applicationContext as HealthApplication
-                val today = com.samsunghealthclone.data.StepEntry.getDayStart()
-                val entry = app.getRepository().getEntryForDateSync(today) ?: com.samsunghealthclone.data.StepEntry(date = today)
-                entry.steps = stepCount
-                entry.lastUpdated = System.currentTimeMillis()
-                app.getRepository().updateCalculatedFields(entry)
-                app.getRepository().insertOrUpdate(entry)
+                app.getRepository().incrementSteps(detectedSteps)
             }
+            updateNotification()
         }
-    }
-
-    private fun insertOrUpdate(entry: com.samsunghealthclone.data.StepEntry) {
-        // This will be called from coroutine scope
     }
 
     override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}

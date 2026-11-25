@@ -1,10 +1,14 @@
 package com.samsunghealthclone
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -17,6 +21,7 @@ import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
 import com.github.mikephil.charting.formatter.ValueFormatter
+import com.samsunghealthclone.data.StepEntry
 import com.samsunghealthclone.databinding.ActivityMainBinding
 import com.samsunghealthclone.ui.MainViewModel
 import com.samsunghealthclone.ui.StepsAdapter
@@ -28,6 +33,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var stepsAdapter: StepsAdapter
     private var tapCount = 0
     private var lastTapTime = 0L
+
+    private val activityRecognitionPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            StepCounterService.startService(this)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,8 +55,17 @@ class MainActivity : AppCompatActivity() {
         setupRecyclerView()
         setupClickListeners()
 
-        // Start step counter service
-        StepCounterService.startService(this)
+        requestActivityRecognitionAndStartTracking()
+    }
+
+    private fun requestActivityRecognitionAndStartTracking() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+            checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION) != PackageManager.PERMISSION_GRANTED
+        ) {
+            activityRecognitionPermission.launch(Manifest.permission.ACTIVITY_RECOGNITION)
+        } else {
+            StepCounterService.startService(this)
+        }
     }
 
     private fun setupToolbar() {
