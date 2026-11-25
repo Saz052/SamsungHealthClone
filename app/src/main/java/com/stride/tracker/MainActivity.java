@@ -5,6 +5,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -42,8 +43,17 @@ public final class MainActivity extends Activity {
     private TextView energyView;
     private LinearLayout history;
     private ProgressBar progress;
+    private SharedPreferences preferences;
+    private long lastDashboardRefresh;
     private int titleTaps;
     private long lastTitleTap;
+
+    private final SharedPreferences.OnSharedPreferenceChangeListener preferenceListener = (prefs, key) -> {
+        if (key != null && (key.startsWith("steps_") || key.startsWith("active_ms_"))) {
+            long now = System.currentTimeMillis();
+            if (now - lastDashboardRefresh >= 750L) refresh();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle state) {
@@ -53,6 +63,7 @@ public final class MainActivity extends Activity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
         }
+        preferences = StepStore.preferences(this);
         setContentView(createScreen());
         refresh();
         requestActivityPermission();
@@ -61,7 +72,14 @@ public final class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (preferences != null) preferences.registerOnSharedPreferenceChangeListener(preferenceListener);
         refresh();
+    }
+
+    @Override
+    protected void onPause() {
+        if (preferences != null) preferences.unregisterOnSharedPreferenceChangeListener(preferenceListener);
+        super.onPause();
     }
 
     private View createScreen() {
@@ -105,7 +123,7 @@ public final class MainActivity extends Activity {
         LinearLayout stats = new LinearLayout(this);
         stats.setOrientation(LinearLayout.HORIZONTAL);
         page.addView(stats, top(12));
-        timeView = addStat(stats, "ВРЕМЯ", "0 ч", true);
+        timeView = addStat(stats, "АКТИВНОЕ ВРЕМЯ", "0 мин", true);
         distanceView = addStat(stats, "РАССТОЯНИЕ", "0 км", false);
         energyView = addStat(stats, "ЭНЕРГИЯ", "0 ккал", false);
 
@@ -114,7 +132,7 @@ public final class MainActivity extends Activity {
         history.setPadding(dp(16), dp(4), dp(16), dp(4));
         history.setBackgroundColor(Color.WHITE);
         page.addView(history, top(12));
-        page.addView(text("Время, расстояние и калории рассчитаны приблизительно.", 12, MUTED, false), top(14));
+        page.addView(text("Активное время считается по непрерывным сигналам датчика шагов. Расстояние и калории примерные.", 12, MUTED, false), top(14));
         return scroll;
     }
 
@@ -137,7 +155,8 @@ public final class MainActivity extends Activity {
         int steps = StepStore.todaySteps(this);
         countView.setText(NumberFormat.getIntegerInstance().format(steps));
         progress.setProgress(Math.min(100, Math.round(steps * 100f / DAILY_GOAL)));
-        timeView.setText(String.format(Locale.getDefault(), "%.1f ч", StepStore.hoursForSteps(steps)));
+        timeView.setText(formatActiveTime(StepStore.activeMilliseconds(this, StepStore.today())));
+        lastDashboardRefresh = System.currentTimeMillis();
         distanceView.setText(String.format(Locale.getDefault(), "%.2f км", StepStore.distanceKmForSteps(steps)));
         energyView.setText(NumberFormat.getIntegerInstance().format(StepStore.caloriesForSteps(steps)) + " ккал");
 
@@ -148,7 +167,11 @@ public final class MainActivity extends Activity {
             line.setGravity(Gravity.CENTER_VERTICAL);
             line.setPadding(0, dp(11), 0, dp(11));
             String date = i == 0 ? "Сегодня" : StepStore.displayDate(day);
-            line.addView(text(date, 14, INK, i == 0), new LinearLayout.LayoutParams(
+            LinearLayout dayInfo = column();
+            dayInfo.addView(text(date, 14, INK, i == 0));
+            dayInfo.addView(text("Активность: " + formatActiveTime(StepStore.activeMilliseconds(this, day)),
+                    11, MUTED, false), top(3));
+            line.addView(dayInfo, new LinearLayout.LayoutParams(
                     0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
             line.addView(text(NumberFormat.getIntegerInstance().format(StepStore.getSteps(this, day)),
                     14, i == 0 ? GREEN : MUTED, true));
@@ -250,6 +273,14 @@ public final class MainActivity extends Activity {
                 })
                 .create();
         dialog.show();
+    }
+
+    private String formatActiveTime(long milliseconds) {
+        long totalMinutes = Math.max(0L, milliseconds) / 60_000L;
+        long hours = totalMinutes / 60L;
+        long minutes = totalMinutes % 60L;
+        if (hours > 0L) return hours + " ч " + minutes + " мин";
+        return totalMinutes + " мин";
     }
 
     private String formatDate(Calendar day) {
