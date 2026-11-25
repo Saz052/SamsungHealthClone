@@ -32,17 +32,21 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: Set up Android SDK (use pre-installed)
+      - name: Set up Android SDK paths
         run: |
           echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
           echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
           echo "/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_PATH
           echo "/usr/local/lib/android/sdk/build-tools/34.0.0" >> $GITHUB_PATH
 
-          yes | sdkmanager --licenses > /dev/null
-          sdkmanager "platforms;android-34" 2>/dev/null || true
-          sdkmanager "build-tools;34.0.0" 2>/dev/null || true
-          sdkmanager "ndk;26.3.11579264" 2>/dev/null || true
+      - name: Accept SDK licenses and install packages
+        run: |
+          SDKMGR="/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMGR" --licenses > /dev/null
+          "$SDKMGR" "platforms;android-34" 2>/dev/null || true
+          "$SDKMGR" "build-tools;34.0.0" 2>/dev/null || true
+          "$SDKMGR" "ndk;26.3.11579264" 2>/dev/null || true
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
