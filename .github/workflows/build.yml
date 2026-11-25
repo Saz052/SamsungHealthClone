@@ -32,7 +32,10 @@ jobs:
           build-tools-version: 34.0.0
           cmdline-tools-version: latest
           platforms: android-34
-          # Don't install deprecated 'tools' package
+
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | sdkmanager --licenses > /dev/null
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
@@ -48,7 +51,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: ./gradlew assembleDebug --no-daemon --stacktrace --info
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
