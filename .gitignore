@@ -1,8 +1,7 @@
-# Gradle
+# Gradle and build outputs
 .gradle/
 build/
 */build/
-!gradle/wrapper/gradle-wrapper.jar
 
 # Local configuration
 local.properties
@@ -13,31 +12,21 @@ local.properties
 *.iml
 *.iws
 *.ipr
-*.idea/
 .vscode/
-*.swp
-*.swo
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Keystore
+# Signing keys and generated packages
 *.keystore
 *.jks
 signing.properties
-
-# Build outputs
 *.apk
 *.aab
 *.ap_
 
-# Test reports
+# Reports and logs
 */build/reports/
 */build/outputs/
-
-# Kotlin
-*.kt.metadata
-
-# Logs
 *.log

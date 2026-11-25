@@ -23,7 +23,7 @@ public final class StepCounterService extends Service implements SensorEventList
 
     private SensorManager sensorManager;
     private Sensor stepDetector;
-    private boolean registered;
+    private boolean listenerRegistered;
     private long lastNotificationUpdate;
 
     @Override
@@ -47,9 +47,9 @@ public final class StepCounterService extends Service implements SensorEventList
             stopSelf(startId);
             return START_NOT_STICKY;
         }
-
-        if (!registered) {
-            registered = sensorManager.registerListener(this, stepDetector, SensorManager.SENSOR_DELAY_NORMAL);
+        if (!listenerRegistered) {
+            listenerRegistered = sensorManager.registerListener(
+                    this, stepDetector, SensorManager.SENSOR_DELAY_NORMAL);
         }
         return START_STICKY;
     }
@@ -57,8 +57,8 @@ public final class StepCounterService extends Service implements SensorEventList
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event == null || event.sensor.getType() != Sensor.TYPE_STEP_DETECTOR) return;
-        int detectedSteps = event.values.length == 0 ? 1 : Math.max(1, Math.round(event.values[0]));
-        StepStore.addSteps(this, detectedSteps);
+        int steps = event.values.length == 0 ? 1 : Math.max(1, Math.round(event.values[0]));
+        StepStore.addSteps(this, steps);
 
         long now = System.currentTimeMillis();
         if (now - lastNotificationUpdate >= 2500L) {
@@ -70,13 +70,13 @@ public final class StepCounterService extends Service implements SensorEventList
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
-        // Step detector accuracy does not affect the saved step count.
+        // Step detector accuracy does not change the saved count.
     }
 
     @Override
     public void onDestroy() {
         if (sensorManager != null) sensorManager.unregisterListener(this);
-        registered = false;
+        listenerRegistered = false;
         stopForeground(STOP_FOREGROUND_REMOVE);
         super.onDestroy();
     }
@@ -89,11 +89,8 @@ public final class StepCounterService extends Service implements SensorEventList
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID,
-                "Подсчёт шагов",
-                NotificationManager.IMPORTANCE_LOW
-        );
-        channel.setDescription("Считает шаги, пока приложение работает в фоне");
+                CHANNEL_ID, "Подсчёт шагов", NotificationManager.IMPORTANCE_LOW);
+        channel.setDescription("Подсчёт шагов в фоновом режиме");
         NotificationManager manager = getSystemService(NotificationManager.class);
         if (manager != null) manager.createNotificationChannel(channel);
     }
@@ -102,12 +99,7 @@ public final class StepCounterService extends Service implements SensorEventList
         Intent openApp = new Intent(this, MainActivity.class);
         openApp.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(
-                this,
-                0,
-                openApp,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-
+                this, 0, openApp, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 ? new Notification.Builder(this, CHANNEL_ID)
                 : new Notification.Builder(this);

@@ -8,54 +8,51 @@ import java.util.Calendar;
 import java.util.Locale;
 
 final class StepStore {
-    private static final String PREFS = "stride_activity";
-    private static final String PREFIX = "steps_";
+    private static final String PREFERENCES = "stride_activity";
+    private static final String STEP_PREFIX = "steps_";
 
     private StepStore() {}
 
     static SharedPreferences preferences(Context context) {
-        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        return context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
     }
 
     static Calendar today() {
-        Calendar calendar = Calendar.getInstance();
-        clearTime(calendar);
-        return calendar;
+        Calendar day = Calendar.getInstance();
+        clearTime(day);
+        return day;
     }
 
     static Calendar dayOffset(int offset) {
-        Calendar calendar = today();
-        calendar.add(Calendar.DAY_OF_YEAR, offset);
-        return calendar;
+        Calendar day = today();
+        day.add(Calendar.DAY_OF_YEAR, offset);
+        return day;
     }
 
-    static String keyFor(Calendar calendar) {
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-        return PREFIX + format.format(calendar.getTime());
+    static String keyFor(Calendar day) {
+        return STEP_PREFIX + new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(day.getTime());
     }
 
-    static int getSteps(Context context, Calendar calendar) {
-        return preferences(context).getInt(keyFor(calendar), 0);
+    static int getSteps(Context context, Calendar day) {
+        return preferences(context).getInt(keyFor(day), 0);
     }
 
-    static void setSteps(Context context, Calendar calendar, int steps) {
+    static void setSteps(Context context, Calendar day, int steps) {
         int safeSteps = Math.max(0, Math.min(200_000, steps));
-        preferences(context).edit().putInt(keyFor(calendar), safeSteps).apply();
+        preferences(context).edit().putInt(keyFor(day), safeSteps).apply();
     }
 
     static void addSteps(Context context, int amount) {
-        Calendar calendar = today();
-        int next = getSteps(context, calendar) + Math.max(0, amount);
-        setSteps(context, calendar, next);
+        Calendar day = today();
+        setSteps(context, day, getSteps(context, day) + Math.max(0, amount));
     }
 
     static int todaySteps(Context context) {
         return getSteps(context, today());
     }
 
-    static String displayDate(Calendar calendar) {
-        SimpleDateFormat format = new SimpleDateFormat("EEE, d MMM", Locale.getDefault());
-        return format.format(calendar.getTime());
+    static String displayDate(Calendar day) {
+        return new SimpleDateFormat("EEE, d MMM", Locale.getDefault()).format(day.getTime());
     }
 
     static float hoursForSteps(int steps) {
@@ -70,10 +67,10 @@ final class StepStore {
         return Math.round(steps * 0.04f);
     }
 
-    private static void clearTime(Calendar calendar) {
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
+    private static void clearTime(Calendar day) {
+        day.set(Calendar.HOUR_OF_DAY, 0);
+        day.set(Calendar.MINUTE, 0);
+        day.set(Calendar.SECOND, 0);
+        day.set(Calendar.MILLISECOND, 0);
     }
 }
