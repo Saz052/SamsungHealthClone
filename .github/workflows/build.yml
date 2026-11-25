@@ -31,6 +31,8 @@ jobs:
           ndk-version: r26d
           build-tools-version: 34.0.0
           cmdline-tools-version: latest
+          platforms: android-34
+          # Don't install deprecated 'tools' package
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
