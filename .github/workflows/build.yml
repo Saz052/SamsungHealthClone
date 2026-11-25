@@ -24,37 +24,36 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
+      - name: Set up Gradle 8.6
+        run: |
+          curl -fsSL https://services.gradle.org/distributions/gradle-8.6-bin.zip -o "$RUNNER_TEMP/gradle-8.6-bin.zip"
+          unzip -q "$RUNNER_TEMP/gradle-8.6-bin.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-8.6/bin" >> "$GITHUB_PATH"
+
       - name: Set up Android SDK paths
         run: |
-          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
-          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
-          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> $GITHUB_PATH
-          echo "/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_PATH
-          echo "/usr/local/lib/android/sdk/build-tools/34.0.0" >> $GITHUB_PATH
+          echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
+          echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
+          echo "/usr/local/lib/android/sdk/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          echo "/usr/local/lib/android/sdk/platform-tools" >> "$GITHUB_PATH"
+          echo "/usr/local/lib/android/sdk/build-tools/34.0.0" >> "$GITHUB_PATH"
 
       - name: Accept SDK licenses and install packages
         run: |
           SDKMGR="/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager"
           yes | "$SDKMGR" --licenses > /dev/null
-          "$SDKMGR" "platforms;android-34" 2>/dev/null || true
-          "$SDKMGR" "build-tools;34.0.0" 2>/dev/null || true
-          "$SDKMGR" "ndk;26.3.11579264" 2>/dev/null || true
+          "$SDKMGR" "platforms;android-34"
+          "$SDKMGR" "build-tools;34.0.0"
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
+          path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+          restore-keys: ${{ runner.os }}-gradle-
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace --info
+        run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
