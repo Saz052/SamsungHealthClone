@@ -24,15 +24,19 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: Set up Android SDK
+      - name: Set up Android SDK (minimal)
         uses: android-actions/setup-android@v3
         with:
           cmdline-tools-version: latest
-          accept-android-sdk-licenses: true
-          packages: |
-            platforms;android-34
-            build-tools;34.0.0
-            ndk;26.3.11579264
+
+      - name: Install SDK packages
+        run: |
+          # Accept licenses
+          yes | sdkmanager --licenses > /dev/null
+          # Install required packages one by one
+          sdkmanager "platforms;android-34"
+          sdkmanager "build-tools;34.0.0"
+          sdkmanager "ndk;26.3.11579264"
 
       - name: Cache Gradle packages
         uses: actions/cache@v4
@@ -56,15 +60,6 @@ jobs:
           name: app-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
-
-      - name: Upload APK info
-        run: |
-          APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
-          if [ -f "$APK_PATH" ]; then
-            SIZE=$(du -h "$APK_PATH" | cut -f1)
-            echo "APK Size: $SIZE"
-            echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
-          fi
 
   release:
     name: Create Release
