@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Colors (Samsung Health Blue) -->
+    <color name="primary">#0061FF</color>
+    <color name="primary_dark">#004DD0</color>
+    <color name="primary_light">#E8F0FF</color>
+    <color name="primary_variant">#0078FF</color>
+
+    <!-- Secondary Colors -->
+    <color name="secondary">#00C853</color>
+    <color name="secondary_dark">#00A640</color>
+    <color name="secondary_light">#E8FFE8</color>
+
+    <!-- Background & Surface -->
+    <color name="background">#F5F6FA</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_variant">#F0F2F5</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary">#1A1A2E</color>
+    <color name="text_secondary">#6B6B7A</color>
+    <color name="text_disabled">#B0B0BE</color>
+    <color name="text_on_primary">#FFFFFF</color>
+    <color name="text_on_secondary">#FFFFFF</color>
+
+    <!-- Status Colors -->
+    <color name="success">#00C853</color>
+    <color name="warning">#FFB300</color>
+    <color name="error">#FF3B30</color>
+    <color name="info">#0061FF</color>
+
+    <!-- Warning Card -->
+    <color name="warning_bg">#FFF8E1</color>
+    <color name="warning_border">#FFB300</color>
+    <color name="warning_text">#F57F17</color>
+
+    <!-- Chart -->
+    <color name="chart_grid">#E0E0E0</color>
+    <color name="chart_text">#6B6B7A</color>
+
+    <!-- Divider -->
+    <color name="divider">#E0E0E0</color>
+
+    <!-- Shadow -->
+    <color name="shadow">#1A000000</color>
+</resources>
